@@ -66,7 +66,13 @@
 #include "app_timer.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
+
+#define EVK_NINA-B1 1
+#ifdef EVK_NINA-B1
+#define THINGY_BUTTON 30  /* SW2 on EVK-NINA-B1 */
+#else
 #define THINGY_BUTTON 11
+#endif
 #define DEVICE_NAME "Thingy"
 #define MIN_CONN_INTERVAL MSEC_TO_UNITS(250, UNIT_1_25_MS)
 #define MAX_CONN_INTERVAL MSEC_TO_UNITS(1000, UNIT_1_25_MS)
@@ -102,6 +108,11 @@ NRF_SDH_SOC_OBSERVER(mesh_observer, NRF_SDH_BLE_STACK_OBSERVER_PRIO, on_sd_evt, 
 #define LED_BLINK_CNT_RESET      (3)
 #define LED_BLINK_CNT_PROV       (4)
 
+#ifdef EVK_NINA-B1
+#define LED_PROV 0 // Red LED on EVK-NINA-B1
+#define LED_LIGHT 1 // Blue LED on EVK-NINA-B1
+#endif
+
 static generic_on_off_server_t m_server;
 static generic_on_off_client_t m_client;
 static bool                   m_device_provisioned;
@@ -109,9 +120,15 @@ static bool m_led_flag= 0;
 static bool m_on_off_button_flag= 0;
 int LED_blink(void)
 {
+    #ifdef EVK_NINA-B1
+    bsp_board_led_on(LED_LIGHT);
+    nrf_delay_ms(100);  
+    bsp_board_led_off(LED_LIGHT);
+	#else
     ERROR_CHECK(drv_ext_light_on(1));
     nrf_delay_ms(100);  
-   ERROR_CHECK(drv_ext_light_off(1));
+    ERROR_CHECK(drv_ext_light_off(1));
+    #endif
 }
 static void provisioning_complete_cb(void)
 {
@@ -127,7 +144,9 @@ static void provisioning_complete_cb(void)
     seq.sequence_vals.off_intensity =5;
     seq.sequence_vals.fade_in_time_ms = 400;
     seq.sequence_vals.fade_out_time_ms = 400; 
-    ERROR_CHECK(drv_ext_light_rgb_sequence(1, &seq));
+    #ifndef EVK_NINA-B1
+	ERROR_CHECK(drv_ext_light_rgb_sequence(1, &seq));
+	#endif
     nrf_delay_ms(300);  
 
 }
@@ -143,20 +162,31 @@ static void provisioning_failed_cb(void)
     seq.sequence_vals.fade_in_time_ms = 400;
     seq.sequence_vals.fade_out_time_ms = 400; 
     
+	#ifndef EVK_NINA-B1
     ERROR_CHECK(drv_ext_light_rgb_sequence(1, &seq));
+	#endif
    
 }
 
 static void provisioning_start_cb(void)
 {
+  #ifdef EVK_NINA-B1
+  bsp_board_led_off(LED_PROV);
+  #else
   ERROR_CHECK(drv_ext_light_off(1));
+  #endif
    
 }
 
 static void provisioning_blink_output_cb(uint8_t * number)
 
 {   uint32_t err_code;
+    #ifdef EVK_NINA-B1
+    bsp_board_led_off(LED_PROV);
+    #else
     ERROR_CHECK(drv_ext_light_off(1));
+	#endif
+	
      __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Blink OOB %u\n", number[15]);
      //The OOB data only use last byte to set the number of blink
      //Start the blinking timer
@@ -175,12 +205,20 @@ static bool on_off_server_set_cb(const generic_on_off_server_t * p_server, bool 
    __LOG(LOG_SRC_APP, LOG_LEVEL_INFO, "Got SET command to %u\n", value);
    if (value)
    {
+   	   #ifdef EVK_NINA-B1
+       bsp_board_led_on(LED_LIGHT);
+	   #else
        ERROR_CHECK(drv_ext_light_on(1));
+       #endif
        m_led_flag=1;
     }
     else
     {
+       #ifdef EVK_NINA-B1
+       bsp_board_led_off(LED_LIGHT);
+	   #else
        ERROR_CHECK(drv_ext_light_off(1));
+   	   #endif
        m_led_flag=0;
     }
     
@@ -399,7 +437,8 @@ static void start(void)
             .prov_failed_cb= provisioning_failed_cb
         };
         ERROR_CHECK(mesh_provisionee_prov_start(&prov_start_params));
-               
+        
+        #ifndef EVK_NINA-B1
         drv_ext_light_rgb_sequence_t seq=SEQUENCE_DEFAULT_VALUES;
         seq.color = DRV_EXT_LIGHT_COLOR_RED;
         seq.sequence_vals.on_time_ms = 500;
@@ -410,6 +449,7 @@ static void start(void)
         seq.sequence_vals.fade_out_time_ms = 400; 
         
         ERROR_CHECK(drv_ext_light_rgb_sequence(1, &seq));
+        #endif
         
         
     }else
@@ -423,9 +463,13 @@ static void start(void)
             nrf_delay_ms(500);
             node_reset();
         }
+		#ifdef EVK_NINA-B1
+		nrf_delay_ms(100);
+		#else
         ERROR_CHECK(drv_ext_light_on(1));
         nrf_delay_ms(100);
-       ERROR_CHECK(drv_ext_light_off(1));
+        ERROR_CHECK(drv_ext_light_off(1));
+   		#endif
  
     }
     const uint8_t *p_uuid = nrf_mesh_configure_device_uuid_get();
@@ -486,7 +530,7 @@ uint32_t m_my_ui_init( void)
     drv_ext_light_init_t            led_init;
     //lint --e{651} Potentially confusing initializer
     static const drv_ext_light_conf_t led_conf[DRV_EXT_LIGHT_NUM] = DRV_EXT_LIGHT_CFG;
-
+    #ifndef EVK_NINA-B1
     static const nrf_drv_twi_config_t twi_config =
     {
         .scl                = TWI_SCL,
@@ -520,7 +564,7 @@ uint32_t m_my_ui_init( void)
     nrf_gpio_pin_clear(MOS_2);
     nrf_gpio_pin_clear(MOS_3);
     nrf_gpio_pin_clear(MOS_4);
-    
+    #endif
  
     return NRF_SUCCESS;
 }
@@ -532,10 +576,17 @@ uint32_t m_my_ui_init( void)
 
 static void board_init(void)
 {
-    uint32_t            err_code;
+    uint32_t            err_code = NRF_SUCCESS;
     drv_ext_gpio_init_t ext_gpio_init;
 
-
+    #ifdef EVK_NINA-B1
+    bsp_board_init(BSP_INIT_LEDS);
+    /* Turn off all LEDs */
+    for (int i = 0; i < LEDS_NUMBER; i++)
+    {
+       bsp_board_led_off(i);
+    }
+	#else
     static const nrf_drv_twi_config_t twi_config =
     {
         .scl                = TWI_SCL,
@@ -554,17 +605,23 @@ static void board_init(void)
     ext_gpio_init.p_cfg = &sx1509_cfg;
     
     err_code = support_func_configure_io_startup(&ext_gpio_init);
+    #endif
     APP_ERROR_CHECK(err_code);
 }
 
 static void blink_timeout_handler(void * p_context)
 {
     UNUSED_PARAMETER(p_context);
-    
+    #ifdef EVK_NINA-B1
+    bsp_board_led_on(LED_PROV);
+    nrf_delay_ms(100);  
+    bsp_board_led_off(LED_PROV);
+	#else
     ERROR_CHECK(drv_ext_light_on(1));
-    
     nrf_delay_ms(100);  
     ERROR_CHECK(drv_ext_light_off(1));
+    #endif
+	
     number_of_blink--;
     if (number_of_blink<=0) 
     {

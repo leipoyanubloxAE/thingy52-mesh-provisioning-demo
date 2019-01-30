@@ -1,4 +1,13 @@
 # Thingy Mesh Provisioning Demo v0.5
+### Adaptation for EVK-NINA-B11x
+This is a fork for thing52-mesh-provisioning-demo. It is meant to port the demo to EVK-NINA-B11x.
+
+The LED is slightly different:
+- Blink red several times: It's the OOB authentication, please type the number of blink to the app when asked.
+- Turn on or off solid Blue: Thingy in normal operation, light is turn off or on. 
+
+Use SW2 button as the Thing:52 button. It can be used to switch on and off the LED. The node can be reset powering off and on the EVK (or pressing the reset button) while pressing SW2.
+
 ### Overview
 This is a quick guide on how to use the thingy52-mesh-provisioning-demo with the nRFMesh mobile app on iOS and Android.
 
@@ -52,12 +61,13 @@ To compile the demo firmware and run the demo, please follow the steps:
 2. Extract ThingySDKv2.1_mod.zip inside "external" in Mesh SDK. Should keep the "ThingySDKv2.1" folder name. 
 3. Download and extract nRF5 SDK v15.0.0 
 4. In SDK v15 \nRF5_SDK_15.0.0_a53641a\components\boards folder remove/rename file pca20020.h. It conflicts with the same file in Thingy SDK. 
-4. Download and place the thingy_provisioning_demo_generic_OnOff folders in this repo into \examples\light_switch 
-5. Connect the Thingy to the Debug port out on the DK or the Segger Jlink debugger. 
-6. Do an erase all to remove the Thingy original firmware and bootloader
-7. Open Segger Embedded Studio, and install the "nRF CPU Support Package". You can check it by click the main tool bar "Tools" -> "Package Manager", and search "nRF CPU Support Package".
-8. Make sure you followed the SES.md guide in \doc\getting_started in nRF MESH SDK v2.2.0 of adding `SDK_ROOT` macro into SES, the same as when you started with Mesh examples. 
-9. Compile one of the project provided in this repo and flash the firmware, the softdevice is flashed automatically. 
+5. Replace SDK v15 \nRF5_SDK_15.0.0_a53641a\components\boards\pca10040.h with the one in this repo.
+6. Download and place the thingy_provisioning_demo_generic_OnOff folders in this repo into \examples\light_switch 
+7. Connect the Thingy to the Debug port out on the DK or the Segger Jlink debugger. 
+8. Do an erase all to remove the Thingy original firmware and bootloader
+9. Open Segger Embedded Studio, and install the "nRF CPU Support Package". You can check it by click the main tool bar "Tools" -> "Package Manager", and search "nRF CPU Support Package".
+10. Make sure you followed the SES.md guide in \doc\getting_started in nRF MESH SDK v2.2.0 of adding `SDK_ROOT` macro into SES, the same as when you started with Mesh examples (In Segger Embedded Studio, click "Tools" -> "Building", set the value for "Global Macros" to "SDK_ROOT=DIRECTORY_FOR_NORDIC_SDK15.0.0". 
+11. Compile one of the project provided in this repo and flash the firmware, the softdevice is flashed automatically. 
 
 ### Known issues
 

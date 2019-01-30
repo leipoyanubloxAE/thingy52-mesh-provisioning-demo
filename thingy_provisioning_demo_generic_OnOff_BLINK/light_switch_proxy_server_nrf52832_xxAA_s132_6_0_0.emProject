@@ -181,6 +181,9 @@
       <file file_name="../../../external/ThingySDKv2.1/source/util/support_func.c" />
       <file file_name="../../../external/ThingySDKv2.1/source/drivers/drv_ext_gpio.c" />
     </folder>
+    <folder Name="Board Definition">
+      <file file_name="$(SDK_ROOT:../../../../nRF5_SDK_15.0.0_a53641a)/components/boards/boards.c" />
+    </folder>
   </project>
   <configuration
     Name="Debug"
